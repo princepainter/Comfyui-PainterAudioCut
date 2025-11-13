@@ -51,11 +51,13 @@ git clone https://github.com/princepainter/Comfyui-PainterAudioCut.git
 解压到 ComfyUI/custom_nodes/ 目录 | Extract to ComfyUI/custom_nodes/ directory
 重启 ComfyUI | Restart ComfyUI
 🔧 参数说明 | Parameters
-参数	Type	Default	中文说明	English Description
-audio	AUDIO	-	输入音频（需连接音频输出节点）	Input audio (connect from audio output node)
-frame_rate	INT	30	每秒帧数（fps），决定时间分割精度	Frames per second, determines time division precision
-start_frame	INT	0	包含的起始帧索引（从 0 开始）	Inclusive start frame index (0-based)
-end_frame	INT	30	不包含的结束帧索引	Exclusive end frame index
+| 参数            | Type    | Default | 中文说明               | English Description                                   |
+| ------------- | ------- | ------- | ------------------ | ----------------------------------------------------- |
+| `audio`       | `AUDIO` | -       | 输入音频（需连接音频输出节点）    | Input audio (connect from audio output node)          |
+| `frame_rate`  | `INT`   | `30`    | 每秒帧数（fps），决定时间分割精度 | Frames per second, determines time division precision |
+| `start_frame` | `INT`   | `0`     | **包含**的起始帧索引（从0开始） | **Inclusive** start frame index (0-based)             |
+| `end_frame`   | `INT`   | `30`    | **不包含**的结束帧索引      | **Exclusive** end frame index                         |
+
 📊 使用示例 | Usage Examples
 示例 1 | Example 1: 裁剪前 1 秒 | Trim First Second
 场景 | Scenario: 5 秒音频，删除前 1 秒
