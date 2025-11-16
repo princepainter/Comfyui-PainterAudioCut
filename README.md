@@ -1,104 +1,135 @@
-<div align="center">
+# ComfyUI Audio Cut Node / ComfyUI 音频剪切节点
 
-# ComfyUI Painter Audio Cut
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![ComfyUI](https://img.shields.io/badge/Powered%20by-ComfyUI-orange)](https://github.com/comfyanonymous/ComfyUI)
-
-</div>
-
-<div align="center">
-  <h3>English | 中文</h3>
-</div>
+**English** |本节点由抖音博主：绘画小子 制作 [中文](#中文)
 
 ---
 
-## 🎯 简介 | Introduction
+## English
 
-**本节点由抖音博主：绘画小子 制作。**
-**ComfyUI Painter Audio Cut** 是一个基于帧率的高精度音频剪切自定义节点。  
-**ComfyUI Painter Audio Cut** is a high-precision audio trimming custom node based on frame rates.
+A simple audio trimming node for ComfyUI that supports adding silence by using negative start frame values.
 
-通过帧数而非时间戳实现音频的精确裁剪，完美适配视频帧同步需求。  
-Trim audio precisely by frame numbers instead of timestamps, perfectly matching video frame synchronization needs.
+### Features
 
----
+- Trim audio by frame numbers based on frame rate
+- Add silence at the beginning using negative `start_frame` values
+- Maintains original audio format and sample rate
 
-## ✨ 核心特性 | Key Features
+### Installation
 
-| 中文 | English |
-|------|--------|
-| 🎯 **帧级精度控制** - 按帧数裁剪，与视频帧率完美同步 | 🎯 **Frame-level Precision** - Trim by frame numbers, perfectly sync with video FPS |
-| ⚡ **高性能处理** - 基于 PyTorch 张量操作，实时无延迟 | ⚡ **High Performance** - Real-time processing with PyTorch tensor operations |
-| 🔒 **智能边界处理** - 自动处理越界，防止报错中断 | 🔒 **Smart Boundary Handling** - Auto-handle out-of-bounds to prevent errors |
-| 🎵 **标准格式兼容** - 完全兼容 ComfyUI 音频格式 | 🎵 **Standard Format Compatible** - Fully compatible with ComfyUI audio format |
-| 🛠️ **极简操作界面** - 三个参数，直观易用 | 🛠️ **Minimalist UI** - Three parameters, intuitive and easy to use |
+1. Clone or download this repository into your ComfyUI `custom_nodes` directory:
+   ```
+   ComfyUI/custom_nodes/ComfyUI-Audio-Cut/
+   ```
+2. Restart ComfyUI
 
----
+### Usage
 
-## 📦 安装指南 | Installation
+Add the **"Painter Audio Cut"** node from `audio/processing` category.
 
-### 方法一：Git 克隆（推荐）| Method 1: Git Clone (Recommended)
+#### Parameters
 
-```bash
-# 进入 ComfyUI 自定义节点目录 | Navigate to ComfyUI custom nodes directory
-cd ComfyUI/custom_nodes
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `audio` | Input audio (expects `AUDIO` type from Load Audio node) | - |
+| `frame_rate` | Frames per second for calculation | `30` |
+| `start_frame` | Starting frame. **Negative values add silence** | `-30` |
+| `end_frame` | Ending frame (audio will be trimmed here) | `1000` |
+
+#### How Negative Start Frame Works
+
+When `start_frame` is negative, the node adds silent frames **before** your audio:
+- Silence duration = `abs(start_frame) / frame_rate` seconds
+- The original audio starts playing after the silence
+- Total output length = silence + trimmed audio portion
+
+#### Examples
+
+**Add 1 second of silence to 5-second audio:**
+- Input: 5s audio (150 frames @ 30fps)
+- Settings: `start_frame = -30`, `end_frame = 150`
+- Output: 6s audio (1s silence + 5s original)
+
+**Normal trimming (no silence):**
+- Settings: `start_frame = 30`, `end_frame = 90`
+- Output: Trims audio from 1s to 3s (60 frames @ 30fps)
+
+#### Input/Output Format
+
+**Input Audio Format:**
+```python
+{
+  "waveform": torch.Tensor,  # shape: (batch, channels, samples)
+  "sample_rate": int
+}
 ```
-# 克隆本仓库 | Clone this repository
-git clone https://github.com/princepainter/Comfyui-PainterAudioCut.git
-方法二：手动安装 | Method 2: Manual Installation
-下载本仓库 ZIP 包 | Download the ZIP file of this repository
-解压到 ComfyUI/custom_nodes/ 目录 | Extract to ComfyUI/custom_nodes/ directory
-重启 ComfyUI | Restart ComfyUI
-🔧 参数说明 | Parameters
-| 参数            | Type    | Default | 中文说明               | English Description                                   |
-| ------------- | ------- | ------- | ------------------ | ----------------------------------------------------- |
-| `audio`       | `AUDIO` | -       | 输入音频（需连接音频输出节点）    | Input audio (connect from audio output node)          |
-| `frame_rate`  | `INT`   | `30`    | 每秒帧数（fps），决定时间分割精度 | Frames per second, determines time division precision |
-| `start_frame` | `INT`   | `0`     | **包含**的起始帧索引（从0开始） | **Inclusive** start frame index (0-based)             |
-| `end_frame`   | `INT`   | `30`    | **不包含**的结束帧索引      | **Exclusive** end frame index                         |
 
-📊 使用示例 | Usage Examples
-示例 1 | Example 1: 裁剪前 1 秒 | Trim First Second
-场景 | Scenario: 5 秒音频，删除前 1 秒
+**Output:** Same format as input, with trimmed/modified waveform
 
-Audio: 5 seconds, remove first 1 second
+---
 
-python
-编辑
-# 参数设置 | Parameters
-frame_rate  = 30     # 1秒 = 30帧 | 1 second = 30 frames
-start_frame = 30     # 跳过30帧 = 1秒 | Skip 30 frames = 1 second
-end_frame   = 150    # 5秒 × 30fps = 150帧 | 5s × 30fps = 150 frames
+## 中文
 
-# 输出 | Output: 第30-149帧（1.0s ~ 5.0s）
-# Result: Frames 30–149 (corresponding to 1.0s ~ 5.0s)
-示例 2 | Example 2: 提取中间片段 | Extract Middle Section
-场景 | Scenario: 提取第 2–4 秒音频
+ComfyUI 的简单音频剪切节点，支持使用负起始帧值来添加静音片段。本节点由抖音博主：绘画小子 制作
 
-Audio: Extract audio from 2nd to 4th second
+### 功能特点
 
-python
-编辑
-frame_rate  = 30
-start_frame = 60     # 2 × 30 = 60帧 | 2 × 30 = 60 frames
-end_frame   = 120    # 4 × 30 = 120帧 | 4 × 30 = 120 frames
+- 基于帧率和帧号剪切音频
+- 使用负的 `start_frame` 值在音频开头添加静音
+- 保持原始音频格式和采样率不变
 
-# 输出 | Output: 第60-119帧（共60帧=2秒）
-# Result: Frames 60–119 (total 60 frames = 2 seconds)
-示例 3 | Example 3: 高帧率精确裁剪 | High FPS Precision
-python
-编辑
-frame_rate  = 60     # 60fps提供更高精度 | 60fps for higher precision
-start_frame = 45     # 0.75秒 | 0.75 second
-end_frame   = 90     # 1.5秒 | 1.5 seconds
+### 安装方法
 
-# 输出 | Output: 0.75s ~ 1.5s 片段
-# Result: Audio clip from 0.75s to 1.5s
-⚠️ 边界规则 | Boundary Rules
-重要 | IMPORTANT: 本节点采用 Python 标准切片规则
+1. 将本仓库克隆或下载到 ComfyUI 的 `custom_nodes` 目录：
+   ```
+   ComfyUI/custom_nodes/ComfyUI-Audio-Cut/
+   ```
+2. 重启 ComfyUI
 
-This node uses Python standard slicing rules
+### 使用说明
 
-起始帧 | Start Frame: 包含该帧数据 (INCLUSIVE)
-结束帧 | End Frame: 不包含该帧数据 (EXCLUSIVE)
+在 `audio/processing` 类别中添加 **"Painter Audio Cut"** 节点。
+
+#### 参数说明
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `audio` | 输入音频（接收 Load Audio 节点的 `AUDIO` 类型） | - |
+| `frame_rate` | 每秒帧数，用于计算 | `30` |
+| `start_frame` | 起始帧。**负值表示添加静音** | `-30` |
+| `end_frame` | 结束帧（音频将在此帧处截断） | `1000` |
+
+#### 负起始帧的工作原理
+
+当 `start_frame` 为负数时，节点会在音频前添加静音片段：
+- 静音时长 = `abs(start_frame) / frame_rate` 秒
+- 原始音频在静音结束后开始播放
+- 总输出长度 = 静音时长 + 截取的音频部分
+
+#### 使用示例
+
+**为 5 秒音频添加 1 秒静音：**
+- 输入：5 秒音频（150 帧 @ 30fps）
+- 设置：`start_frame = -30`, `end_frame = 150`
+- 输出：6 秒音频（1 秒静音 + 5 秒原音频）
+
+**普通剪切（不添加静音）：**
+- 设置：`start_frame = 30`, `end_frame = 90`
+- 输出：从第 1 秒剪切到第 3 秒（60 帧 @ 30fps）
+
+#### 输入输出格式
+
+**输入音频格式：**
+```python
+{
+  "waveform": torch.Tensor,  # 形状: (batch, channels, samples)
+  "sample_rate": int
+}
+```
+
+**输出：** 与输入格式相同，波形数据经过剪切或修改
+
+---
+
+### License / 许可证
+
+MIT License - Feel free to use and modify. / MIT 许可证 - 可自由使用和修改。
