@@ -36,8 +36,8 @@ class PainterAudioCut:
             }
         }
     
-    RETURN_TYPES = ("AUDIO",)
-    RETURN_NAMES = ("trimmed_audio",)
+    RETURN_TYPES = ("AUDIO", "INT")
+    RETURN_NAMES = ("trimmed_audio", "total_frames")
     FUNCTION = "trim_audio"
     CATEGORY = "audio/processing"
     
@@ -52,7 +52,7 @@ class PainterAudioCut:
             end_frame: 结束帧
         
         Returns:
-            剪切后的音频字典
+            剪切后的音频字典和总帧数
         """
         # 验证输入
         if frame_rate <= 0:
@@ -100,11 +100,15 @@ class PainterAudioCut:
             # 切片音频
             trimmed_waveform = waveform[..., start_sample:end_sample]
         
-        # 返回剪切后的音频
+        # 计算输出音频的总帧数
+        total_output_samples = trimmed_waveform.shape[-1]
+        total_frames = int(total_output_samples / samples_per_frame)
+        
+        # 返回剪切后的音频和总帧数
         return ({
             "waveform": trimmed_waveform,
             "sample_rate": sample_rate
-        },)
+        }, total_frames)
     
     @classmethod
     def IS_CHANGED(cls, audio, frame_rate, start_frame, end_frame):
