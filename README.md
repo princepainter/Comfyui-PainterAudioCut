@@ -12,6 +12,7 @@ A simple audio trimming node for ComfyUI that supports adding silence by using n
 ### Features
 
 - Trim audio by frame numbers based on frame rate
+- After the upgrade, it now supports audio frame count output.
 - Add silence at the beginning using negative `start_frame` values
 - Maintains original audio format and sample rate
 
@@ -75,9 +76,10 @@ ComfyUI 的简单音频剪切节点，支持使用负起始帧值来添加静音
 ### 功能特点
 
 - 基于帧率和帧号剪切音频
+- 升级后，现在支持输出音频的帧数
 - 使用负的 `start_frame` 值在音频开头添加静音
 - 保持原始音频格式和采样率不变
-![功能截图](QQ截图20251116175345.jpg)
+![QQ截图20251225164419](https://github.com/user-attachments/assets/70e0a16f-4fd4-4531-a796-ec91cf45ffbc)
 ### 安装方法
 
 1. 将本仓库克隆或下载到 ComfyUI 的 `custom_nodes` 目录：
