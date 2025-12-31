@@ -11,28 +11,28 @@ class PainterAudioCut:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "audio": ("AUDIO",),  # 音频输入
-                "frame_rate": ("INT", {
-                    "default": 30,
-                    "min": 1,
-                    "max": 120,
-                    "step": 1,
+                "audio": ("AUDIO",),
+                "frame_rate": ("FLOAT", {
+                    "default": 30.0,
+                    "min": 1.0,
+                    "max": 120.0,
+                    "step": 0.1,
                     "display": "number"
-                }),  # 每秒帧数
+                }),
                 "start_frame": ("INT", {
                     "default": 0,
-                    "min": -999999,  # 允许负值以添加静音
+                    "min": -999999,
                     "max": 999999,
                     "step": 1,
                     "display": "number"
-                }),  # 起始帧，负数表示在前面添加静音
+                }),
                 "end_frame": ("INT", {
                     "default": 30,
                     "min": 1,
                     "max": 999999,
                     "step": 1,
                     "display": "number"
-                }),  # 结束帧
+                }),
             }
         }
     
@@ -43,68 +43,67 @@ class PainterAudioCut:
     
     def trim_audio(self, audio, frame_rate, start_frame, end_frame):
         """
-        剪切音频的主要逻辑
+        Main logic for trimming audio
         
         Args:
-            audio: 输入音频字典，包含'waveform'和'sample_rate'
-            frame_rate: 每秒多少帧
-            start_frame: 起始帧，负数表示在音频前添加静音
-            end_frame: 结束帧
+            audio: Input audio dictionary containing 'waveform' and 'sample_rate'
+            frame_rate: Frames per second (float)
+            start_frame: Start frame, negative values add silence at beginning
+            end_frame: End frame
         
         Returns:
-            剪切后的音频字典和总帧数
+            Trimmed audio dictionary and total frame count
         """
-        # 验证输入
+        # Validate inputs
         if frame_rate <= 0:
-            raise ValueError("帧率必须大于0")
+            raise ValueError("Frame rate must be greater than 0")
         if start_frame >= end_frame:
-            raise ValueError("起始帧必须小于结束帧")
+            raise ValueError("Start frame must be less than end frame")
         
-        # 获取音频数据
-        waveform = audio["waveform"]  # shape: (batch, channels, samples)
+        # Get audio data
+        waveform = audio["waveform"]
         sample_rate = audio["sample_rate"]
         
-        # 计算每帧的样本数
+        # Calculate samples per frame
         samples_per_frame = sample_rate / frame_rate
         
-        # 总样本数
+        # Total samples
         total_samples = waveform.shape[-1]
         
         if start_frame < 0:
-            # 处理负数起始帧：在音频前添加静音
+            # Handle negative start frame: add silence before audio
             silence_frames = abs(start_frame)
             silence_samples = int(silence_frames * samples_per_frame)
             
-            # 确保结束样本位置不超出音频边界
+            # Ensure end sample does not exceed audio bounds
             end_sample = min(int(end_frame * samples_per_frame), total_samples)
             
-            # 创建静音片段（与原音频相同的形状和数据类型）
-            # 形状: (batch, channels, silence_samples)
+            # Create silence segment
             silence_shape = list(waveform.shape)
             silence_shape[-1] = silence_samples
             silence_waveform = torch.zeros(*silence_shape, dtype=waveform.dtype, device=waveform.device)
             
-            # 从原音频开头切片到结束位置
+            # Slice audio from beginning to end position
             audio_slice = waveform[..., 0:end_sample]
             
-            # 拼接静音和音频
+            # Concatenate silence and audio
             trimmed_waveform = torch.cat([silence_waveform, audio_slice], dim=-1)
         else:
-            # 正常处理正数起始帧
+            # Normal processing for positive start frame
             start_sample = int(start_frame * samples_per_frame)
             end_sample = min(int(end_frame * samples_per_frame), total_samples)
             
-            # 确保不超出音频边界
+            # Ensure start sample does not exceed audio bounds
             start_sample = min(start_sample, total_samples)
             
-            # 切片音频
+            # Slice audio
             trimmed_waveform = waveform[..., start_sample:end_sample]
         
-        # 计算输出音频的总帧数
+        # Calculate total frames for output audio
         total_output_samples = trimmed_waveform.shape[-1]
         total_frames = int(total_output_samples / samples_per_frame)
         
-        # 返回剪切后的音频和总帧数
+        # Return trimmed audio and total frames
         return ({
             "waveform": trimmed_waveform,
             "sample_rate": sample_rate
@@ -113,11 +112,10 @@ class PainterAudioCut:
     @classmethod
     def IS_CHANGED(cls, audio, frame_rate, start_frame, end_frame):
         """
-        告诉ComfyUI何时需要重新执行节点
+        Tell ComfyUI when to re-execute the node
         """
         return float("NaN")
 
-# 节点映射
 NODE_CLASS_MAPPINGS = {
     "PainterAudioCut": PainterAudioCut
 }
@@ -126,5 +124,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "PainterAudioCut": "Painter Audio Cut"
 }
 
-# Web目录（如果需要自定义前端）
 WEB_DIRECTORY = "./web"
