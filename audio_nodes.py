@@ -6,6 +6,7 @@ class PainterAudioCut:
     An audio trimming node for ComfyUI that cuts audio by setting start and end frames based on a specified frame rate.
     Supports negative start_frame to add silence at the beginning.
     Adds tail silence frames at the end of audio.
+    Automatically aligns output frame count to 4N+1 format (e.g., 120→121, 122→125).
     """
     
     @classmethod
@@ -45,24 +46,11 @@ class PainterAudioCut:
         }
     
     RETURN_TYPES = ("AUDIO", "INT")
-    RETURN_NAMES = ("trimmed_audio", "total_frames")
+    RETURN_NAMES = ("trimmed_audio", "aligned_frames")
     FUNCTION = "trim_audio"
     CATEGORY = "audio/processing"
     
     def trim_audio(self, audio, frame_rate, start_frame, end_frame, tail_silence_frames):
-        """
-        Main logic for trimming audio and adding tail silence
-        
-        Args:
-            audio: Input audio dictionary containing 'waveform' and 'sample_rate'
-            frame_rate: Frames per second (float)
-            start_frame: Start frame, negative values add silence at beginning
-            end_frame: End frame
-            tail_silence_frames: Number of silence frames to add at the end
-        
-        Returns:
-            Trimmed audio dictionary with tail silence and total frame count
-        """
         # Validate inputs
         if frame_rate <= 0:
             raise ValueError("Frame rate must be greater than 0")
@@ -110,10 +98,32 @@ class PainterAudioCut:
         total_output_samples = trimmed_waveform.shape[-1]
         total_frames = int(total_output_samples / samples_per_frame)
         
+        # Align to 4N+1 format
+        remainder = (total_frames - 1) % 4
+        if remainder == 0:
+            aligned_frames = total_frames
+        else:
+            aligned_frames = total_frames + (4 - remainder)
+        
+        # Adjust audio length to match aligned frames
+        target_samples = int(aligned_frames * samples_per_frame)
+        current_samples = trimmed_waveform.shape[-1]
+        
+        if target_samples > current_samples:
+            # Add silence to reach target length
+            silence_samples = target_samples - current_samples
+            silence_shape = list(trimmed_waveform.shape)
+            silence_shape[-1] = silence_samples
+            silence_waveform = torch.zeros(*silence_shape, dtype=trimmed_waveform.dtype, device=trimmed_waveform.device)
+            final_waveform = torch.cat([trimmed_waveform, silence_waveform], dim=-1)
+        else:
+            # Trim to target length
+            final_waveform = trimmed_waveform[..., :target_samples]
+        
         return ({
-            "waveform": trimmed_waveform,
+            "waveform": final_waveform,
             "sample_rate": sample_rate
-        }, total_frames)
+        }, aligned_frames)
     
     @classmethod
     def IS_CHANGED(cls, audio, frame_rate, start_frame, end_frame, tail_silence_frames):
