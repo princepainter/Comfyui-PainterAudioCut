@@ -1,5 +1,11 @@
-from .audio_nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, WEB_DIRECTORY
+from .PainterAudioCut import PainterAudioCut
 
-__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
+NODE_CLASS_MAPPINGS = {
+    "PainterAudioCut": PainterAudioCut,
+}
 
-__version__ = "1.0.0"
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "PainterAudioCut": "Painter Audio Cut",
+}
+
+__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
